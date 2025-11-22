@@ -1,0 +1,44 @@
+<div class="wordle-container">
+  <h1>Wordle em Angular</h1>
+
+  <div class="game-board">
+    <div class="linha" *ngFor="let linha of tentativas">
+      <div class="letra"
+           *ngFor="let letra of linha"
+           [ngClass]="{
+             'correta': letra.status === 'correta',
+             'presente': letra.status === 'presente',
+             'ausente': letra.status === 'ausente',
+             'vazio': letra.status === 'vazio'
+           }">
+        {{ letra.char }}
+      </div>
+    </div>
+  </div>
+
+  <div class="mensagem" *ngIf="mensagem">
+    {{ mensagem }}
+  </div>
+
+  <div class="input-area">
+    <input
+      [(ngModel)]="palavraDigitada"
+      maxlength="5"
+      placeholder="Digite uma palavra"
+      (keyup.enter)="enviarTentativa()"
+      [disabled]="jogoFinalizado"
+      class="input-palavra"
+    />
+    <button
+      (click)="enviarTentativa()"
+      [disabled]="jogoFinalizado || palavraDigitada.length !== 5"
+      class="btn-enviar">
+      Enviar
+    </button>
+    <button
+      (click)="reiniciar()"
+      class="btn-reiniciar">
+      Reiniciar
+    </button>
+  </div>
+</div>
