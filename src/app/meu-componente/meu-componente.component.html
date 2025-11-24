@@ -1,44 +1,123 @@
-<div class="wordle-container">
-  <h1>Wordle em Angular</h1>
+<div class="wordle-container" [ngClass]="{'modo-escuro': modoEscuro}">
+  <header class="header">
+    <div class="header-left">
+      <button class="icon-button" (click)="toggleEstatisticas()" title="Estatísticas">
+        📊
+      </button>
+    </div>
+    <h1>Wordle Pro</h1>
+    <div class="header-right">
+      <button class="icon-button" (click)="toggleModoEscuro()" title="Alternar tema">
+        {{ modoEscuro ? '☀️' : '🌙' }}
+      </button>
+    </div>
+  </header>
 
-  <div class="game-board">
-    <div class="linha" *ngFor="let linha of tentativas">
+  <div class="game-board" [ngClass]="{'shake': tentativaInvalida}">
+    <div class="linha" *ngFor="let linha of tentativas; let i = index">
       <div class="letra"
-           *ngFor="let letra of linha"
+           *ngFor="let letra of linha; let j = index"
            [ngClass]="{
              'correta': letra.status === 'correta',
              'presente': letra.status === 'presente',
              'ausente': letra.status === 'ausente',
-             'vazio': letra.status === 'vazio'
-           }">
+             'vazio': letra.status === 'vazio',
+             'preenchida': letra.char !== '',
+             'linha-atual': i === linhaAtual && !jogoFinalizado
+           }"
+           [style.animation-delay.ms]="letra.status !== 'vazio' ? j * 100 : 0">
         {{ letra.char }}
       </div>
     </div>
   </div>
 
-  <div class="mensagem" *ngIf="mensagem">
+  <div class="mensagem" *ngIf="mensagem" [ngClass]="{'sucesso': venceu, 'erro': !venceu && jogoFinalizado}">
     {{ mensagem }}
   </div>
 
   <div class="input-area">
-    <input
-      [(ngModel)]="palavraDigitada"
-      maxlength="5"
-      placeholder="Digite uma palavra"
-      (keyup.enter)="enviarTentativa()"
-      [disabled]="jogoFinalizado"
-      class="input-palavra"
-    />
-    <button
-      (click)="enviarTentativa()"
-      [disabled]="jogoFinalizado || palavraDigitada.length !== 5"
-      class="btn-enviar">
-      Enviar
+    <div class="palavra-atual">
+      <span *ngFor="let char of palavraDigitada.split('')" class="char-preview">{{ char }}</span>
+      <span *ngFor="let i of [].constructor(5 - palavraDigitada.length)" class="char-empty">_</span>
+    </div>
+  </div>
+
+  <div class="teclado">
+    <div class="teclado-linha" *ngFor="let linha of teclado">
+      <button
+        *ngFor="let tecla of linha"
+        class="tecla"
+        [ngClass]="{
+          'tecla-correta': tecla.status === 'correta',
+          'tecla-presente': tecla.status === 'presente',
+          'tecla-ausente': tecla.status === 'ausente',
+          'tecla-nao-usada': tecla.status === 'nao-usada'
+        }"
+        (click)="clicarTecla(tecla.char)"
+        [disabled]="jogoFinalizado">
+        {{ tecla.char }}
+      </button>
+    </div>
+    <div class="teclado-linha controles">
+      <button class="tecla tecla-especial" (click)="enviarTentativa()" [disabled]="jogoFinalizado || palavraDigitada.length !== 5">
+        ENTER
+      </button>
+      <button class="tecla tecla-especial" (click)="apagarLetra()" [disabled]="jogoFinalizado || palavraDigitada.length === 0">
+        ⌫
+      </button>
+    </div>
+  </div>
+
+  <div class="acoes">
+    <button (click)="reiniciar()" class="btn-reiniciar">
+      🔄 Nova Palavra
     </button>
-    <button
-      (click)="reiniciar()"
-      class="btn-reiniciar">
-      Reiniciar
+    <button (click)="compartilhar()" class="btn-compartilhar" *ngIf="jogoFinalizado">
+      📤 Compartilhar
     </button>
+  </div>
+
+  <div class="modal-overlay" *ngIf="mostrarEstatisticas" (click)="toggleEstatisticas()">
+    <div class="modal-estatisticas" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Estatísticas</h2>
+        <button class="btn-fechar" (click)="toggleEstatisticas()">✕</button>
+      </div>
+
+      <div class="stats-resumo">
+        <div class="stat-item">
+          <div class="stat-valor">{{ estatisticas.jogadas }}</div>
+          <div class="stat-label">Jogadas</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-valor">{{ percentualVitorias }}%</div>
+          <div class="stat-label">Vitórias</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-valor">{{ estatisticas.sequenciaAtual }}</div>
+          <div class="stat-label">Sequência</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-valor">{{ estatisticas.melhorSequencia }}</div>
+          <div class="stat-label">Melhor</div>
+        </div>
+      </div>
+
+      <div class="distribuicao">
+        <h3>Distribuição de Vitórias</h3>
+        <div class="grafico">
+          <div class="barra-container" *ngFor="let count of estatisticas.distribuicao; let i = index">
+            <span class="barra-label">{{ i + 1 }}</span>
+            <div class="barra-wrapper">
+              <div class="barra"
+                   [style.width.%]="estatisticas.vitorias > 0 ? (count / estatisticas.vitorias * 100) : 0"
+                   [ngClass]="{'barra-destaque': venceu && linhaAtual === i}">
+                {{ count }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
